@@ -1,89 +1,195 @@
 import 'dart:io';
 
-double totalBuy = 0;
-double totalSell = 0;
+/// Counts unique labels for eq / gt / lt commands.
+int labelCounter = 0;
 
-void add(String product, int amount, double price, File outputFile) {
-  double sum = amount * price;
-  totalBuy += sum;
-
-  outputFile.writeAsStringSync(
-    "### BUY $product ###\n$sum\n",
-    mode: FileMode.append,
-  );
+/// Writes one assembly line to the output file.
+void writeLine(File outputFile, String line) {
+  outputFile.writeAsStringSync('$line\n', mode: FileMode.append);
 }
 
-void sub(String product, int amount, double price, File outputFile) {
-  double sum = amount * price;
-  totalSell += sum;
-
-  outputFile.writeAsStringSync(
-    "\$\$\$ CELL $product \$\$\$\n$sum\n",
-    mode: FileMode.append,
-  );
-}
-
-void or(String product, int amount, double price, File outputFile) {
-  double sum = amount * price;
-  totalSell += sum;
-
-  outputFile.writeAsStringSync(
-    "\$\$\$ CELL $product \$\$\$\n$sum\n",
-    mode: FileMode.append,
-  );
-}
-
-void handleVmFile(File vmFile, File outputFile) {
-  String fileName = vmFile.uri.pathSegments.last.replaceAll('.vm', '');
-
-  outputFile.writeAsStringSync("$fileName\n", mode: FileMode.append);
-
-  List<String> lines = vmFile.readAsLinesSync();
-
-  for (String line in lines) {
-    List<String> parts = line.split(" ");
-
-    String command = parts[0];
-    String product = parts[1];
-    int amount = int.parse(parts[2]);
-    double price = double.parse(parts[3]);
-
-    if (command == "buy") {
-      handleBuy(product, amount, price, outputFile);
-    } else if (command == "cell") {
-      handleSell(product, amount, price, outputFile);
-    }
+/// Writes multiple assembly lines to the output file.
+void writeLines(File outputFile, List<String> lines) {
+  for (final line in lines) {
+    writeLine(outputFile, line);
   }
 }
 
-void main() {
-  String dirPath = r"C:\dart\dart-projects\POSL\tar0"; // תשני לפי המחשב שלך
-  Directory dir = Directory(dirPath);
+/// Translates: push constant x
+void writePushConstant(int value, File outputFile) {
+  writeLines(outputFile, [
+    '@$value',
+    'D=A',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+  ]);
+}
 
-  if (!dir.existsSync()) {
-    print("Directory not found!");
+/// Translates binary commands like add, sub, and, or.
+/// Stack effect:
+/// y = pop(), x = pop(), push(x op y)
+void writeBinaryCommand(String op, File outputFile) {
+  writeLines(outputFile, [
+    '@SP',
+    'AM=M-1', // SP--, A=SP
+    'D=M',    // D = y
+    'A=A-1',  // A = SP-1 => x
+    op,       // perform x op y into M
+  ]);
+}
+
+/// Translates unary commands like neg, not.
+/// Stack effect:
+/// y = top(), replace with op(y)
+void writeUnaryCommand(String op, File outputFile) {
+  writeLines(outputFile, [
+    '@SP',
+    'A=M-1',
+    op,
+  ]);
+}
+
+/// Translates comparison commands: eq, gt, lt
+void writeComparison(String jumpType, File outputFile) {
+  final trueLabel = 'TRUE_$labelCounter';
+  final endLabel = 'END_$labelCounter';
+  labelCounter++;
+
+  writeLines(outputFile, [
+    '@SP',
+    'AM=M-1',   // SP--, A=SP
+    'D=M',      // D = y
+    'A=A-1',    // A = SP-1 => x
+    'D=M-D',    // x - y
+    '@$trueLabel',
+    'D;$jumpType',
+    '@SP',
+    'A=M-1',
+    'M=0',      // false
+    '@$endLabel',
+    '0;JMP',
+    '($trueLabel)',
+    '@SP',
+    'A=M-1',
+    'M=-1',     // true
+    '($endLabel)',
+  ]);
+}
+
+/// Handles one parsed VM command.
+void translateCommand(String line, File outputFile) {
+  final parts = line.split(RegExp(r'\s+'));
+
+  if (parts.isEmpty) {
     return;
   }
 
-  //output file:
-  String folderName = dir.uri.pathSegments[dir.uri.pathSegments.length - 2];
-  File outputFile = File('$dirPath\\$folderName.asm');
-  outputFile.writeAsStringSync("");
+  final command = parts[0];
 
-  //handle VM files:
-  List<FileSystemEntity> files = dir.listSync();
+  switch (command) {
+    case 'push':
+      if (parts.length == 3 && parts[1] == 'constant') {
+        final value = int.parse(parts[2]);
+        writePushConstant(value, outputFile);
+      } else {
+        throw UnsupportedError(
+          'Stage I currently supports only: push constant x',
+        );
+      }
+      break;
 
-  for (var file in files) {
-    if (file is File && file.path.endsWith('.vm')) {
-      handleVmFile(file, outputFile);
-    }
+    case 'add':
+      writeBinaryCommand('M=M+D', outputFile);
+      break;
+
+    case 'sub':
+      writeBinaryCommand('M=M-D', outputFile);
+      break;
+
+    case 'and':
+      writeBinaryCommand('M=M&D', outputFile);
+      break;
+
+    case 'or':
+      writeBinaryCommand('M=M|D', outputFile);
+      break;
+
+    case 'neg':
+      writeUnaryCommand('M=-M', outputFile);
+      break;
+
+    case 'not':
+      writeUnaryCommand('M=!M', outputFile);
+      break;
+
+    case 'eq':
+      writeComparison('JEQ', outputFile);
+      break;
+
+    case 'gt':
+      writeComparison('JGT', outputFile);
+      break;
+
+    case 'lt':
+      writeComparison('JLT', outputFile);
+      break;
+
+    default:
+      throw UnsupportedError('Unsupported VM command: $line');
+  }
+}
+
+/// Removes comments and extra spaces from one VM line.
+String cleanLine(String line) {
+  if (line.contains('//')) {
+    line = line.split('//')[0];
+  }
+  return line.trim();
+}
+
+/// Translates one .vm file into one .asm file.
+void translateFile(String inputPath) {
+  final inputFile = File(inputPath);
+
+  if (!inputFile.existsSync()) {
+    print('Input file not found!');
+    return;
   }
 
-  outputFile.writeAsStringSync(
-    "TOTAL BUY: $totalBuy\nTOTAL SELL: $totalSell\n",
-    mode: FileMode.append,
-  );
+  if (!inputFile.path.endsWith('.vm')) {
+    print('Input must be a .vm file');
+    return;
+  }
 
-  print("TOTAL BUY: $totalBuy");
-  print("TOTAL SELL: $totalSell");
+  final outputPath = inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
+  final outputFile = File(outputPath);
+
+  // Clear old output
+  outputFile.writeAsStringSync('');
+
+  final lines = inputFile.readAsLinesSync();
+
+  for (final rawLine in lines) {
+    final line = cleanLine(rawLine);
+
+    if (line.isEmpty) {
+      continue;
+    }
+
+    translateCommand(line, outputFile);
+  }
+
+  print('Translation completed: $outputPath');
+}
+
+void main(List<String> args) {
+  if (args.isEmpty) {
+    print('Usage: dart run main.dart <inputFile.vm>');
+    return;
+  }
+
+  translateFile(args[0]);
 }
