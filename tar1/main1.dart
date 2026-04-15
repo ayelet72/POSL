@@ -147,7 +147,7 @@ void writePushPop(
 
         case 'static':
           writeLines(outputFile, [
-            '@$fileName.$index',
+            '@${16 + index}',
             'D=M',
             '@SP',
             'A=M',
@@ -217,7 +217,7 @@ void writePushPop(
             '@SP',
             'AM=M-1',
             'D=M',
-            '@$fileName.$index',
+            '@${16 + index}',
             'M=D',
           ]);
           break;
@@ -302,7 +302,6 @@ String cleanLine(String line) {
 /// Translates one .vm file into one .asm file.
 void translateFile(String inputPath) {
   final inputFile = File(inputPath);
-
   if (!inputFile.existsSync()) {
     print('Input file not found!');
     return;
@@ -324,6 +323,9 @@ void translateFile(String inputPath) {
 
   for (final rawLine in lines) {
     final line = cleanLine(rawLine);
+
+    print('RAW: $rawLine');
+    print('CLEAN: $line');
 
     if (line.isEmpty) {
       continue;
