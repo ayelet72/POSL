@@ -35,9 +35,9 @@ void writeBinaryCommand(String op, File outputFile) {
   writeLines(outputFile, [
     '@SP',
     'AM=M-1', // SP--, A=SP
-    'D=M',    // D = y
-    'A=A-1',  // A = SP-1 => x
-    op,       // perform x op y into M
+    'D=M', // D = y
+    'A=A-1', // A = SP-1 => x
+    op, // perform x op y into M
   ]);
 }
 
@@ -45,11 +45,7 @@ void writeBinaryCommand(String op, File outputFile) {
 /// Stack effect:
 /// y = top(), replace with op(y)
 void writeUnaryCommand(String op, File outputFile) {
-  writeLines(outputFile, [
-    '@SP',
-    'A=M-1',
-    op,
-  ]);
+  writeLines(outputFile, ['@SP', 'A=M-1', op]);
 }
 
 /// Translates comparison commands: eq, gt, lt
@@ -60,27 +56,184 @@ void writeComparison(String jumpType, File outputFile) {
 
   writeLines(outputFile, [
     '@SP',
-    'AM=M-1',   // SP--, A=SP
-    'D=M',      // D = y
-    'A=A-1',    // A = SP-1 => x
-    'D=M-D',    // x - y
+    'AM=M-1', // SP--, A=SP
+    'D=M', // D = y
+    'A=A-1', // A = SP-1 => x
+    'D=M-D', // x - y
     '@$trueLabel',
     'D;$jumpType',
     '@SP',
     'A=M-1',
-    'M=0',      // false
+    'M=0', // false
     '@$endLabel',
     '0;JMP',
     '($trueLabel)',
     '@SP',
     'A=M-1',
-    'M=-1',     // true
+    'M=-1', // true
     '($endLabel)',
   ]);
 }
 
+void writePushPop(
+  String command,
+  String segment,
+  int index,
+  File outputFile,
+  String fileName,
+) {
+  switch (command) {
+    // ================= PUSH =================
+    case 'push':
+      switch (segment) {
+        case 'constant':
+          writePushConstant(index, outputFile);
+          break;
+
+        case 'local':
+        case 'argument':
+        case 'this':
+        case 'that':
+          String base;
+          if (segment == 'local')
+            base = 'LCL';
+          else if (segment == 'argument')
+            base = 'ARG';
+          else if (segment == 'this')
+            base = 'THIS';
+          else
+            base = 'THAT';
+
+          writeLines(outputFile, [
+            '@$base',
+            'D=M', //base location
+            '@$index', //A=base+index
+            'A=D+A', //gets the val in A's place
+            'D=M',
+            '@SP',
+            'A=M',
+            'M=D',
+            '@SP',
+            'M=M+1',
+          ]);
+          break;
+
+        case 'temp':
+          // temp = R5-R12
+          writeLines(outputFile, [
+            '@${5 + index}',
+            'D=M',
+            '@SP',
+            'A=M',
+            'M=D',
+            '@SP',
+            'M=M+1',
+          ]);
+          break;
+
+        case 'pointer':
+          // 0 = THIS, 1 = THAT
+          String ptr = (index == 0) ? 'THIS' : 'THAT';
+          writeLines(outputFile, [
+            '@$ptr',
+            'D=M',
+            '@SP',
+            'A=M',
+            'M=D',
+            '@SP',
+            'M=M+1',
+          ]);
+          break;
+
+        case 'static':
+          writeLines(outputFile, [
+            '@$fileName.$index',
+            'D=M',
+            '@SP',
+            'A=M',
+            'M=D',
+            '@SP',
+            'M=M+1',
+          ]);
+          break;
+
+        default:
+          throw UnsupportedError('Unknown segment: $segment');
+      }
+      break;
+
+    // ================= POP =================
+    case 'pop':
+      switch (segment) {
+        case 'local':
+        case 'argument':
+        case 'this':
+        case 'that':
+          String base;
+          if (segment == 'local')
+            base = 'LCL';
+          else if (segment == 'argument')
+            base = 'ARG';
+          else if (segment == 'this')
+            base = 'THIS';
+          else
+            base = 'THAT';
+
+          writeLines(outputFile, [
+            '@$base',
+            'D=M',
+            '@$index',
+            'D=D+A',
+            '@R13',
+            'M=D', // R13 = target address
+
+            '@SP',
+            'AM=M-1',
+            'D=M',
+
+            '@R13',
+            'A=M',
+            'M=D',
+          ]);
+          break;
+
+        case 'temp':
+          writeLines(outputFile, [
+            '@SP',
+            'AM=M-1',
+            'D=M',
+            '@${5 + index}',
+            'M=D',
+          ]);
+          break;
+
+        case 'pointer':
+          String ptr = (index == 0) ? 'THIS' : 'THAT';
+          writeLines(outputFile, ['@SP', 'AM=M-1', 'D=M', '@$ptr', 'M=D']);
+          break;
+
+        case 'static':
+          writeLines(outputFile, [
+            '@SP',
+            'AM=M-1',
+            'D=M',
+            '@$fileName.$index',
+            'M=D',
+          ]);
+          break;
+
+        default:
+          throw UnsupportedError('Unknown segment: $segment');
+      }
+      break;
+
+    default:
+      throw UnsupportedError('Unknown command: $command');
+  }
+}
+
 /// Handles one parsed VM command.
-void translateCommand(String line, File outputFile) {
+void translateCommand(String line, File outputFile, String fileName) {
   final parts = line.split(RegExp(r'\s+'));
 
   if (parts.isEmpty) {
@@ -91,14 +244,10 @@ void translateCommand(String line, File outputFile) {
 
   switch (command) {
     case 'push':
-      if (parts.length == 3 && parts[1] == 'constant') {
-        final value = int.parse(parts[2]);
-        writePushConstant(value, outputFile);
-      } else {
-        throw UnsupportedError(
-          'Stage I currently supports only: push constant x',
-        );
-      }
+    case 'pop':
+      final segment = parts[1];
+      final index = int.parse(parts[2]);
+      writePushPop(command, segment, index, outputFile, fileName);
       break;
 
     case 'add':
@@ -166,6 +315,7 @@ void translateFile(String inputPath) {
 
   final outputPath = inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
   final outputFile = File(outputPath);
+  final fileName = inputFile.uri.pathSegments.last.replaceAll('.vm', '');
 
   // Clear old output
   outputFile.writeAsStringSync('');
@@ -179,7 +329,7 @@ void translateFile(String inputPath) {
       continue;
     }
 
-    translateCommand(line, outputFile);
+    translateCommand(line, outputFile, fileName);
   }
 
   print('Translation completed: $outputPath');
