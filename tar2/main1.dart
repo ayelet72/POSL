@@ -1,9 +1,12 @@
 import 'dart:io';
 
-/// Counter for unique labels used by eq / gt / lt commands.
+/// Unique counter for comparison labels.
 int labelCounter = 0;
+/// Unique counter for return labels.
 int callCounter = 0;
-/// Keeps the current VM file name.
+/// Name of the current function.
+String currentFunctionName = '';
+/// Name of the current VM file.
 String currentFileName = '';
 
 /// Writes multiple assembly lines to the output file.
@@ -77,6 +80,42 @@ void writeComparison(String jumpType, File outputFile) {
   ]);
 }
 
+String scopedLabel(String label) {
+  if (currentFunctionName.isEmpty) {
+    return label;
+  }
+  return '$currentFunctionName\$$label';
+}
+
+void writeLabel(String label, File outputFile) {
+  final fullLabel = scopedLabel(label);
+
+  writeLines(outputFile, [
+    '($fullLabel)',
+  ]);
+}
+
+void writeGoto(String label, File outputFile) {
+  final fullLabel = scopedLabel(label);
+
+  writeLines(outputFile, [
+    '@$fullLabel',
+    '0;JMP',
+  ]);
+}
+
+void writeIf(String label, File outputFile) {
+  final fullLabel = scopedLabel(label);
+
+  writeLines(outputFile, [
+    '@SP',
+    'AM=M-1',
+    'D=M',
+    '@$fullLabel',
+    'D;JNE',
+  ]);
+}
+
 /// Removes comments and extra spaces from a VM line.
 String cleanLine(String line) {
   if (line.contains('//')) {
@@ -141,6 +180,18 @@ void translateCommand(String line, File outputFile) {
 
     case 'lt':
       writeComparison('JLT', outputFile);
+      break;
+
+    case 'label':
+      writeLabel(parts[1], outputFile);
+      break;
+
+    case 'goto':
+      writeGoto(parts[1], outputFile);
+      break;
+
+    case 'if-goto':
+      writeIf(parts[1], outputFile);
       break;
 
     default:
