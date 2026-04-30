@@ -323,24 +323,25 @@ void writeFunction(String functionName, int nVars, File outputFile) {
   }
 }
 
-// push argument i  => argument i = RAM[LCL|ARG + 2]
+// push argument i  => argument i = RAM[base + 2]
 ///=> push this element to the stack
 void writePushSegment(String segment, int index, File outputFile) {
-  String base;
+  final bases = {
+    'local': 'LCL',
+    'argument': 'ARG',
+    'this': 'THIS',
+    'that': 'THAT',
+  };
 
-  if (segment == 'local') {
-    base = 'LCL';
-  } else if (segment == 'argument') {
-    base = 'ARG';
-  } else {
-    throw UnsupportedError('Segment not supported yet');
-  }
+  final base =
+      bases[segment] ??
+      (throw UnsupportedError('Unsupported segment: $segment'));
 
   writeLines(outputFile, [
     '@$base',
     'D=M',
     '@$index',
-    'A=D+A', //base+i
+    'A=D+A',
     'D=M',
     '@SP',
     'A=M',
@@ -351,31 +352,30 @@ void writePushSegment(String segment, int index, File outputFile) {
 }
 
 //pop local 2 =>
-//pop from the stack and save it in : local[i] = RAM[LCL + i]
+//pop from the stack and save it in : local[i] = RAM[base + i]
 //
 void writePopSegment(String segment, int index, File outputFile) {
-  String base;
+  final bases = {
+    'local': 'LCL',
+    'argument': 'ARG',
+    'this': 'THIS',
+    'that': 'THAT',
+  };
 
-  if (segment == 'local') {
-    base = 'LCL';
-  } else if (segment == 'argument') {
-    base = 'ARG';
-  } else {
-    throw UnsupportedError('Segment not supported yet');
-  }
+  final base =
+      bases[segment] ??
+      (throw UnsupportedError('Unsupported segment: $segment'));
 
   writeLines(outputFile, [
     '@$base',
     'D=M',
     '@$index',
     'D=D+A',
-    '@R13', // using arg to help us save the data  before poping
-    'M=D', //saving the address : LCL + i
-
+    '@R13',
+    'M=D',
     '@SP',
     'AM=M-1',
-    'D=M', // saving the value in D
-
+    'D=M',
     '@R13',
     'A=M',
     'M=D',
