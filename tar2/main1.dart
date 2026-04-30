@@ -129,6 +129,12 @@ void translateCommand(String line, File outputFile) {
       }
       break;
 
+    case 'pop':
+      final segment = parts[1];
+      final index = int.parse(parts[2]);
+      writePopSegment(segment, index, outputFile);
+      break;
+
     case 'add':
       writeBinaryCommand('M=M+D', outputFile);
       break;
