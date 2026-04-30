@@ -2,10 +2,13 @@ import 'dart:io';
 
 /// Unique counter for comparison labels.
 int labelCounter = 0;
+
 /// Unique counter for return labels.
 int callCounter = 0;
+
 /// Name of the current function.
 String currentFunctionName = '';
+
 /// Name of the current VM file.
 String currentFileName = '';
 
@@ -15,7 +18,6 @@ void writeLines(File outputFile, List<String> lines) {
     outputFile.writeAsStringSync('$line\n', mode: FileMode.append);
   }
 }
-
 
 /// push constant x
 void writePushConstant(int value, File outputFile) {
@@ -33,23 +35,13 @@ void writePushConstant(int value, File outputFile) {
 /// Translates binary commands:
 /// add / sub / and / or
 void writeBinaryCommand(String op, File outputFile) {
-  writeLines(outputFile, [
-    '@SP',
-    'AM=M-1',
-    'D=M',
-    'A=A-1',
-    op,
-  ]);
+  writeLines(outputFile, ['@SP', 'AM=M-1', 'D=M', 'A=A-1', op]);
 }
 
 /// Translates unary commands:
 /// neg / not
 void writeUnaryCommand(String op, File outputFile) {
-  writeLines(outputFile, [
-    '@SP',
-    'A=M-1',
-    op,
-  ]);
+  writeLines(outputFile, ['@SP', 'A=M-1', op]);
 }
 
 /// Translates comparison commands:
@@ -80,6 +72,8 @@ void writeComparison(String jumpType, File outputFile) {
   ]);
 }
 
+//fix: when there are 2 labels with the same name:
+//prevent crosing names  - cannot happend in assembly
 String scopedLabel(String label) {
   if (currentFunctionName.isEmpty) {
     return label;
@@ -90,30 +84,19 @@ String scopedLabel(String label) {
 void writeLabel(String label, File outputFile) {
   final fullLabel = scopedLabel(label);
 
-  writeLines(outputFile, [
-    '($fullLabel)',
-  ]);
+  writeLines(outputFile, ['($fullLabel)']);
 }
 
 void writeGoto(String label, File outputFile) {
   final fullLabel = scopedLabel(label);
 
-  writeLines(outputFile, [
-    '@$fullLabel',
-    '0;JMP',
-  ]);
+  writeLines(outputFile, ['@$fullLabel', '0;JMP']);
 }
 
 void writeIf(String label, File outputFile) {
   final fullLabel = scopedLabel(label);
 
-  writeLines(outputFile, [
-    '@SP',
-    'AM=M-1',
-    'D=M',
-    '@$fullLabel',
-    'D;JNE',
-  ]);
+  writeLines(outputFile, ['@SP', 'AM=M-1', 'D=M', '@$fullLabel', 'D;JNE']);
 }
 
 /// Removes comments and extra spaces from a VM line.
@@ -136,13 +119,13 @@ void translateCommand(String line, File outputFile) {
 
   switch (command) {
     case 'push':
-      if (parts.length == 3 && parts[1] == 'constant') {
-        final value = int.parse(parts[2]);
-        writePushConstant(value, outputFile);
+      final segment = parts[1];
+      final index = int.parse(parts[2]);
+
+      if (segment == 'constant') {
+        writePushConstant(index, outputFile);
       } else {
-        throw UnsupportedError(
-          'This version currently supports only: push constant x',
-        );
+        writePushSegment(segment, index, outputFile);
       }
       break;
 
@@ -194,6 +177,22 @@ void translateCommand(String line, File outputFile) {
       writeIf(parts[1], outputFile);
       break;
 
+    case 'function':
+      final functionName = parts[1];
+      final nVars = int.parse(parts[2]);
+      writeFunction(functionName, nVars, outputFile);
+      break;
+
+    case 'call':
+      final functionName = parts[1];
+      final nArgs = int.parse(parts[2]);
+      writeCall(functionName, nArgs, outputFile);
+      break;
+
+    case 'return':
+      writeReturn(outputFile);
+      break;
+
     default:
       throw UnsupportedError('Unsupported VM command: $line');
   }
@@ -224,12 +223,13 @@ List<File> getVmFiles(Directory dir) {
       .toList();
   return vmFiles;
 }
+
 void writeCall(String functionName, int nArgs, File outputFile) {
   final returnLabel = 'RETURN_$callCounter';
   callCounter++;
 
   writeLines(outputFile, [
-     // Push return address
+    // Push return address
     '@$returnLabel',
     'D=A',
     '@SP',
@@ -286,26 +286,94 @@ void writeCall(String functionName, int nArgs, File outputFile) {
     'D=M',
     '@LCL',
     'M=D',
-    
+
     // Jump to called function
     '@$functionName',
     '0;JMP',
-    
+
     // Return address label
     '($returnLabel)',
   ]);
 }
+
 void writeInit(File outputFile) {
   // SP = 256
-  writeLines(outputFile, [
-    '@256',
-    'D=A',
-    '@SP',
-    'M=D',
-  ]);
+  writeLines(outputFile, ['@256', 'D=A', '@SP', 'M=D']);
 
   // Call Sys.init
   writeCall('Sys.init', 0, outputFile);
+}
+
+// func in vm : function funcName  k-number of local variables
+void writeFunction(String functionName, int nVars, File outputFile) {
+  currentFunctionName = functionName;
+
+  // the label of the func
+  writeLines(outputFile, ['($functionName)']);
+
+  // initialize locals to 0
+  for (int i = 0; i < nVars; i++) {
+    writePushConstant(0, outputFile);
+  }
+}
+
+// push argument i  => argument i = RAM[LCL|ARG + 2]
+///=> push this element to the stack
+void writePushSegment(String segment, int index, File outputFile) {
+  String base;
+
+  if (segment == 'local') {
+    base = 'LCL';
+  } else if (segment == 'argument') {
+    base = 'ARG';
+  } else {
+    throw UnsupportedError('Segment not supported yet');
+  }
+
+  writeLines(outputFile, [
+    '@$base',
+    'D=M',
+    '@$index',
+    'A=D+A', //base+i
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+  ]);
+}
+
+//pop local 2 =>
+//pop from the stack and save it in : local[i] = RAM[LCL + i]
+//
+void writePopSegment(String segment, int index, File outputFile) {
+  String base;
+
+  if (segment == 'local') {
+    base = 'LCL';
+  } else if (segment == 'argument') {
+    base = 'ARG';
+  } else {
+    throw UnsupportedError('Segment not supported yet');
+  }
+
+  writeLines(outputFile, [
+    '@$base',
+    'D=M',
+    '@$index',
+    'D=D+A',
+    '@R13', // using arg to help us save the data  before poping
+    'M=D', //saving the address : LCL + i
+
+    '@SP',
+    'AM=M-1',
+    'D=M', // saving the value in D
+
+    '@R13',
+    'A=M',
+    'M=D',
+  ]);
 }
 
 /// Translates either one .vm file or a whole folder containing multiple .vm files
@@ -315,8 +383,7 @@ void translatePath(String inputPath) {
   if (type == FileSystemEntityType.file) {
     final inputFile = File(inputPath);
 
-    final outputPath =
-        inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
+    final outputPath = inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
     final outputFile = File(outputPath);
 
     // Clear old output before writing new content.
@@ -337,18 +404,16 @@ void translatePath(String inputPath) {
       return;
     }
 
-    final folderName =
-        dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
+    final folderName = dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
 
-    final outputPath =
-        '${dir.path}${Platform.pathSeparator}$folderName.asm';
+    final outputPath = '${dir.path}${Platform.pathSeparator}$folderName.asm';
     final outputFile = File(outputPath);
 
     // Clear old output before writing new content.
     outputFile.writeAsStringSync('');
 
-   if (vmFiles.length > 1) {
-    writeInit(outputFile);
+    if (vmFiles.length > 1) {
+      writeInit(outputFile);
     }
 
     for (final vmFile in vmFiles) {
