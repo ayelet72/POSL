@@ -45,22 +45,29 @@ void writeComparison(String jumpType, File outputFile) {
   labelCounter++;
 
   writeLines(outputFile, [
+    // SP--, A = top stack cell, D = y
     '@SP',
     'AM=M-1',
     'D=M',
+    // move to x, then D = x - y
     'A=A-1',
     'D=M-D',
+    // if condition is true => jump to TRUE label
     '@$trueLabel',
     'D;$jumpType',
+    // false case => write 0 on the stack
     '@SP',
     'A=M-1',
     'M=0',
+    // skip the true case
     '@$endLabel',
     '0;JMP',
+    // true case => write -1 on the stack
     '($trueLabel)',
     '@SP',
     'A=M-1',
     'M=-1',
+    // end of comparison
     '($endLabel)',
   ]);
 }

@@ -79,7 +79,7 @@ void writeCall(String functionName, int nArgs, File outputFile) {
     '@ARG',
     'M=D',
 
-    // Reposition LCL = SP
+    // LCL = SP
     '@SP',
     'D=M',
     '@LCL',

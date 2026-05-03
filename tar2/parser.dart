@@ -11,6 +11,7 @@ String cleanLine(String line) {
 
 /// translate one cleaned VM command into Hack assembly
 void translateCommand(String line, File outputFile) {
+  //slipts wherever there is a space or few spaces
   final parts = line.split(RegExp(r'\s+'));
 
   if (parts.isEmpty) {
@@ -27,6 +28,7 @@ void translateCommand(String line, File outputFile) {
       if (segment == 'constant') {
         writePushConstant(index, outputFile);
       } else {
+        // local \ argument \ this \ that \ temp\ pointer \ static
         writePushSegment(segment, index, outputFile);
       }
       break;
