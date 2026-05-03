@@ -72,7 +72,6 @@ void writeComparison(String jumpType, File outputFile) {
   ]);
 }
 
-//fix: when there are 2 labels with the same name:
 //prevent crosing names  - cannot happend in assembly
 String scopedLabel(String label) {
   if (currentFunctionName.isEmpty) {
@@ -220,7 +219,7 @@ void translateSingleFile(File inputFile, File outputFile) {
   }
 }
 
-/// Returns all .vm files inside a directory, sorted by file name.
+/// Returns all .vm files inside a directory.
 List<File> getVmFiles(Directory dir) {
   final vmFiles = dir
       .listSync()
@@ -333,10 +332,10 @@ void writePushSegment(String segment, int index, File outputFile) {
     'that': 'THAT',
   };
 
-  final base =
-      bases[segment] ??
-      (throw UnsupportedError('Unsupported segment: $segment'));
-
+  String? base = bases[segment];
+  if (!bases.containsKey(segment)) 
+    throw UnsupportedError('Unsupported segment: $segment');
+  
   writeLines(outputFile, [
     '@$base',
     'D=M',
@@ -362,8 +361,8 @@ void writePopSegment(String segment, int index, File outputFile) {
     'that': 'THAT',
   };
 
-  final base =
-      bases[segment] ??
+  String? base = bases[segment];
+  if (!bases.containsKey(segment)) 
       (throw UnsupportedError('Unsupported segment: $segment'));
 
   writeLines(outputFile, [
@@ -379,6 +378,69 @@ void writePopSegment(String segment, int index, File outputFile) {
     '@R13',
     'A=M',
     'M=D',
+  ]);
+}
+void writeReturn(File outputFile) {
+  writeLines(outputFile, [
+    // R13 = LCL
+    '@LCL',
+    'D=M',
+    '@R13',
+    'M=D',
+
+    // RET = *(FRAME - 5)
+    '@5',
+    'A=D-A',
+    'D=M',
+    '@R14',
+    'M=D',
+
+    // *ARG = pop()
+    '@SP',
+    'AM=M-1',
+    'D=M',
+    '@ARG',
+    'A=M',
+    'M=D',
+
+    // SP = ARG + 1
+    '@ARG',
+    'D=M+1',
+    '@SP',
+    'M=D',
+
+    // THAT = *(FRAME - 1)
+    '@R13',
+    'AM=M-1',
+    'D=M',
+    '@THAT',
+    'M=D',
+
+    // THIS = *(FRAME - 2)
+    '@R13',
+    'AM=M-1',
+    'D=M',
+    '@THIS',
+    'M=D',
+
+    // ARG = *(FRAME - 3)
+    '@R13',
+    'AM=M-1',
+    'D=M',
+    '@ARG',
+    'M=D',
+
+    // LCL = *(FRAME - 4)
+    '@R13',
+    'AM=M-1',
+    'D=M',
+    '@LCL',
+    'M=D',
+
+    // goto RET
+    '@R14',
+    'A=M',
+    '0;JMP',
   ]);
 }
 
