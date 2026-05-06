@@ -1,0 +1,17 @@
+push constant 2
+pop argument 2
+
+push constant 8
+neg
+pop local 4
+
+push constant 7
+pop temp 0
+
+\\
+
+push constant 10
+push local 4
+push temp 0
+xor
+

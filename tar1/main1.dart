@@ -3,6 +3,10 @@ import 'dart:io';
 /// Counts unique labels for eq / gt / lt commands.
 int labelCounter = 0;
 
+/// Keeps the current VM file name.
+/// Used for static variables.
+String currentFileName = '';
+
 /// Writes one assembly line to the output file.
 void writeLine(File outputFile, String line) {
   outputFile.writeAsStringSync('$line\n', mode: FileMode.append);
@@ -45,7 +49,11 @@ void writeBinaryCommand(String op, File outputFile) {
 /// Stack effect:
 /// y = top(), replace with op(y)
 void writeUnaryCommand(String op, File outputFile) {
-  writeLines(outputFile, ['@SP', 'A=M-1', op]);
+  writeLines(outputFile, [
+    '@SP',
+    'A=M-1',
+    op,
+  ]);
 }
 
 /// Translates comparison commands: eq, gt, lt
@@ -80,10 +88,8 @@ void writePushPop(
   String segment,
   int index,
   File outputFile,
-  String fileName,
 ) {
   switch (command) {
-    // ================= PUSH =================
     case 'push':
       switch (segment) {
         case 'constant':
@@ -95,21 +101,22 @@ void writePushPop(
         case 'this':
         case 'that':
           String base;
-          if (segment == 'local')
+          if (segment == 'local') {
             base = 'LCL';
-          else if (segment == 'argument')
+          } else if (segment == 'argument') {
             base = 'ARG';
-          else if (segment == 'this')
+          } else if (segment == 'this') {
             base = 'THIS';
-          else
+          } else {
             base = 'THAT';
+          }
 
           writeLines(outputFile, [
             '@$base',
-            'D=M', //base location
-            '@$index', //A=base+index
-            'A=D+A', //gets the val in A's place
-            'D=M',
+            'D=M', // base address
+            '@$index',
+            'A=D+A', // target address = base + index
+            'D=M', // D = RAM[base + index]
             '@SP',
             'A=M',
             'M=D',
@@ -132,7 +139,7 @@ void writePushPop(
           break;
 
         case 'pointer':
-          // 0 = THIS, 1 = THAT
+          // pointer 0 = THIS, pointer 1 = THAT
           String ptr = (index == 0) ? 'THIS' : 'THAT';
           writeLines(outputFile, [
             '@$ptr',
@@ -146,8 +153,9 @@ void writePushPop(
           break;
 
         case 'static':
+          // static i = FileName.i
           writeLines(outputFile, [
-            '@${16 + index}',
+            '@${currentFileName}.$index',
             'D=M',
             '@SP',
             'A=M',
@@ -162,7 +170,6 @@ void writePushPop(
       }
       break;
 
-    // ================= POP =================
     case 'pop':
       switch (segment) {
         case 'local':
@@ -170,14 +177,15 @@ void writePushPop(
         case 'this':
         case 'that':
           String base;
-          if (segment == 'local')
+          if (segment == 'local') {
             base = 'LCL';
-          else if (segment == 'argument')
+          } else if (segment == 'argument') {
             base = 'ARG';
-          else if (segment == 'this')
+          } else if (segment == 'this') {
             base = 'THIS';
-          else
+          } else {
             base = 'THAT';
+          }
 
           writeLines(outputFile, [
             '@$base',
@@ -186,11 +194,9 @@ void writePushPop(
             'D=D+A',
             '@R13',
             'M=D', // R13 = target address
-
             '@SP',
             'AM=M-1',
             'D=M',
-
             '@R13',
             'A=M',
             'M=D',
@@ -209,7 +215,13 @@ void writePushPop(
 
         case 'pointer':
           String ptr = (index == 0) ? 'THIS' : 'THAT';
-          writeLines(outputFile, ['@SP', 'AM=M-1', 'D=M', '@$ptr', 'M=D']);
+          writeLines(outputFile, [
+            '@SP',
+            'AM=M-1',
+            'D=M',
+            '@$ptr',
+            'M=D',
+          ]);
           break;
 
         case 'static':
@@ -217,7 +229,7 @@ void writePushPop(
             '@SP',
             'AM=M-1',
             'D=M',
-            '@${16 + index}',
+            '@${currentFileName}.$index',
             'M=D',
           ]);
           break;
@@ -232,8 +244,52 @@ void writePushPop(
   }
 }
 
+void writeXor(File outputFile) {
+  writeLines(outputFile, [
+    // R13 = y
+    '@SP',
+    'AM=M-1',
+    'D=M',
+    '@R13',
+    'M=D',
+
+    // R14 = x
+    '@SP',
+    'AM=M-1',
+    'D=M',
+    '@R14',
+    'M=D',
+
+    // x | y
+    '@R14',
+    'D=M',
+    '@R13',
+    'D=D|M',
+    '@R15',
+    'M=D',
+
+    // !(x & y)
+    '@R14',
+    'D=M',
+    '@R13',
+    'D=D&M',
+    'D=!D',
+
+    // (x | y) & !(x & y)
+    '@R15',
+    'D=D&M',
+
+    // push result
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+  ]);
+}
+
 /// Handles one parsed VM command.
-void translateCommand(String line, File outputFile, String fileName) {
+void translateCommand(String line, File outputFile) {
   final parts = line.split(RegExp(r'\s+'));
 
   if (parts.isEmpty) {
@@ -247,7 +303,7 @@ void translateCommand(String line, File outputFile, String fileName) {
     case 'pop':
       final segment = parts[1];
       final index = int.parse(parts[2]);
-      writePushPop(command, segment, index, outputFile, fileName);
+      writePushPop(command, segment, index, outputFile);
       break;
 
     case 'add':
@@ -264,6 +320,10 @@ void translateCommand(String line, File outputFile, String fileName) {
 
     case 'or':
       writeBinaryCommand('M=M|D', outputFile);
+      break;
+
+    case 'xor':
+      writeXor(outputFile);
       break;
 
     case 'neg':
@@ -299,49 +359,88 @@ String cleanLine(String line) {
   return line.trim();
 }
 
-/// Translates one .vm file into one .asm file.
-void translateFile(String inputPath) {
-  final inputFile = File(inputPath);
-  if (!inputFile.existsSync()) {
-    print('Input file not found!');
-    return;
-  }
-
-  if (!inputFile.path.endsWith('.vm')) {
-    print('Input must be a .vm file');
-    return;
-  }
-
-  final outputPath = inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
-  final outputFile = File(outputPath);
-  final fileName = inputFile.uri.pathSegments.last.replaceAll('.vm', '');
-
-  // Clear old output
-  outputFile.writeAsStringSync('');
+void translateSingleFile(File inputFile, File outputFile) {
+  currentFileName = inputFile.uri.pathSegments.last.replaceAll('.vm', '');
 
   final lines = inputFile.readAsLinesSync();
 
   for (final rawLine in lines) {
     final line = cleanLine(rawLine);
 
-    print('RAW: $rawLine');
-    print('CLEAN: $line');
-
     if (line.isEmpty) {
       continue;
     }
 
-    translateCommand(line, outputFile, fileName);
+    translateCommand(line, outputFile);
+  }
+}
+
+/// Returns all .vm files inside a directory.
+List<File> getVmFiles(Directory dir) {
+  final vmFiles = dir
+      .listSync()
+      .whereType<File>()
+      .where((file) => file.path.endsWith('.vm'))
+      .toList();
+
+  vmFiles.sort((a, b) => a.path.compareTo(b.path));
+  return vmFiles;
+}
+
+/// Translates one file or a whole folder.
+/// If a folder is given, all .vm files are merged into one .asm file.
+/// No bootstrap is added.
+void translatePath(String inputPath) {
+  final type = FileSystemEntity.typeSync(inputPath);
+
+  if (type == FileSystemEntityType.file) {
+    final inputFile = File(inputPath);
+
+    final outputPath = inputFile.path.replaceAll(RegExp(r'\.vm$'), '.asm');
+    final outputFile = File(outputPath);
+
+    // clear old output
+    outputFile.writeAsStringSync('');
+
+    translateSingleFile(inputFile, outputFile);
+
+    print('Translation completed: $outputPath');
+    return;
   }
 
-  print('Translation completed: $outputPath');
+  if (type == FileSystemEntityType.directory) {
+    final dir = Directory(inputPath);
+    final vmFiles = getVmFiles(dir);
+
+    if (vmFiles.isEmpty) {
+      print('No .vm files found in directory.');
+      return;
+    }
+
+    final folderName = dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
+    final outputPath = '${dir.path}${Platform.pathSeparator}$folderName.asm';
+    final outputFile = File(outputPath);
+
+    // clear old output
+    outputFile.writeAsStringSync('');
+
+    // translate all VM files into one ASM file
+    for (final vmFile in vmFiles) {
+      translateSingleFile(vmFile, outputFile);
+    }
+
+    print('Translation completed: $outputPath');
+    return;
+  }
+
+  print('Invalid input path.');
 }
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    print('Usage: dart run main.dart <inputFile.vm>');
+    print('Usage: dart run main.dart <input .vm file or folder>');
     return;
   }
 
-  translateFile(args[0]);
+  translatePath(args[0]);
 }
