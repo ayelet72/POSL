@@ -1,0 +1,292 @@
+class Game {
+    field Apple apple;
+    field Elephant elephant;
+    field int selected;
+    field int actionsCount;
+
+    constructor Game new() {
+        // row 80, col 4  => 80*32 + 4  = 2564
+        // row 80, col 20 => 80*32 + 20 = 2580
+        let apple = Apple.new(2564);
+        let elephant = Elephant.new(2580);
+        let selected = 0;
+        let actionsCount = 0;
+        return this;
+    }
+
+    method void dispose() {
+        do apple.dispose();
+        do elephant.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void drawSeparator() {
+        do Screen.setColor(true);
+        do Screen.drawLine(0, 55, 511, 55);
+        return;
+    }
+
+    method void showStartScreen() {
+        do Screen.clearScreen();
+
+        do Output.moveCursor(0, 0);
+        do Output.printString("Choose object:");
+        do Output.println();
+        do Output.printString("A = Apple, E = Elephant");
+        do Output.println();
+        do Output.println();
+
+        do drawSeparator();
+
+        do apple.draw();
+        do elephant.draw();
+        return;
+    }
+
+    method void showGameScreen() {
+        do Screen.clearScreen();
+
+        do Output.moveCursor(0, 0);
+        if (selected = 1) {
+            do Output.printString("Selected: Apple");
+        }
+        if (selected = 2) {
+            do Output.printString("Selected: Elephant");
+        }
+        do Output.println();
+
+        do Output.printString("Arrows = move");
+        do Output.println();
+        do Output.printString("H = horizontal mirror");
+        do Output.println();
+        do Output.printString("V = vertical mirror");
+        do Output.println();
+        do Output.printString("R = rotate right, L = rotate left");
+        do Output.println();
+        do Output.printString("N = normal, Q = quit");
+        do Output.println();
+
+        do drawSeparator();
+        do drawSelected();
+        return;
+    }
+
+    method void showSummary() {
+        do Screen.clearScreen();
+
+        do Output.moveCursor(0, 0);
+        do Output.printString("Game over");
+        do Output.println();
+
+        if (selected = 1) {
+            do Output.printString("Chosen object: Apple");
+        }
+        if (selected = 2) {
+            do Output.printString("Chosen object: Elephant");
+        }
+        do Output.println();
+
+        do Output.printString("Number of actions: ");
+        do Output.printInt(actionsCount);
+        do Output.println();
+        return;
+    }
+
+    method void waitForKeyRelease() {
+        var char key;
+        let key = Keyboard.keyPressed();
+
+        while (~(key = 0)) {
+            let key = Keyboard.keyPressed();
+        }
+        return;
+    }
+
+    method void chooseObject() {
+        var char key;
+        let key = 0;
+
+        while (selected = 0) {
+            let key = Keyboard.keyPressed();
+
+            if ((key = 65) | (key = 97)) {
+                let selected = 1;
+            }
+            if ((key = 69) | (key = 101)) {
+                let selected = 2;
+            }
+        }
+
+        do waitForKeyRelease();
+        return;
+    }
+
+    method void drawSelected() {
+        if (selected = 1) {
+            do apple.draw();
+        }
+        if (selected = 2) {
+            do elephant.draw();
+        }
+        return;
+    }
+
+    method void moveSelectedLeft() {
+        if (selected = 1) {
+            do apple.moveLeft();
+        }
+        if (selected = 2) {
+            do elephant.moveLeft();
+        }
+        return;
+    }
+
+    method void moveSelectedRight() {
+        if (selected = 1) {
+            do apple.moveRight();
+        }
+        if (selected = 2) {
+            do elephant.moveRight();
+        }
+        return;
+    }
+
+    method void moveSelectedUp() {
+        if (selected = 1) {
+            do apple.moveUp();
+        }
+        if (selected = 2) {
+            do elephant.moveUp();
+        }
+        return;
+    }
+
+    method void moveSelectedDown() {
+        if (selected = 1) {
+            do apple.moveDown();
+        }
+        if (selected = 2) {
+            do elephant.moveDown();
+        }
+        return;
+    }
+
+    method void rotateSelectedRight() {
+        if (selected = 1) {
+            do apple.rotateRight();
+        }
+        if (selected = 2) {
+            do elephant.rotateRight();
+        }
+        return;
+    }
+
+    method void rotateSelectedLeft() {
+        if (selected = 1) {
+            do apple.rotateLeft();
+        }
+        if (selected = 2) {
+            do elephant.rotateLeft();
+        }
+        return;
+    }
+
+    method void flipSelectedHorizontal() {
+        if (selected = 1) {
+            do apple.flipHorizontal();
+        }
+        if (selected = 2) {
+            do elephant.flipHorizontal();
+        }
+        return;
+    }
+
+    method void flipSelectedVertical() {
+        if (selected = 1) {
+            do apple.flipVertical();
+        }
+        if (selected = 2) {
+            do elephant.flipVertical();
+        }
+        return;
+    }
+
+    method void resetSelected() {
+        if (selected = 1) {
+            do apple.setNormal();
+        }
+        if (selected = 2) {
+            do elephant.setNormal();
+        }
+        return;
+    }
+
+    method void run() {
+        var char key;
+        var boolean exit;
+
+        let key = 0;
+        let exit = false;
+
+        do showStartScreen();
+        do chooseObject();
+        do showGameScreen();
+
+        while (~exit) {
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+            }
+
+            if ((key = 81) | (key = 113)) {
+                let exit = true;
+            }
+
+            if (~exit) {
+                if (key = 130) {
+                    do moveSelectedLeft();
+                    let actionsCount = actionsCount + 1;
+                }
+                if (key = 132) {
+                    do moveSelectedRight();
+                    let actionsCount = actionsCount + 1;
+                }
+                if (key = 131) {
+                    do moveSelectedUp();
+                    let actionsCount = actionsCount + 1;
+                }
+                if (key = 133) {
+                    do moveSelectedDown();
+                    let actionsCount = actionsCount + 1;
+                }
+
+                if ((key = 72) | (key = 104)) {
+                    do flipSelectedHorizontal();
+                    let actionsCount = actionsCount + 1;
+                }
+                if ((key = 86) | (key = 118)) {
+                    do flipSelectedVertical();
+                    let actionsCount = actionsCount + 1;
+                }
+                if ((key = 82) | (key = 114)) {
+                    do rotateSelectedRight();
+                    let actionsCount = actionsCount + 1;
+                }
+                if ((key = 76) | (key = 108)) {
+                    do rotateSelectedLeft();
+                    let actionsCount = actionsCount + 1;
+                }
+                if ((key = 78) | (key = 110)) {
+                    do resetSelected();
+                    let actionsCount = actionsCount + 1;
+                }
+            }
+
+            do waitForKeyRelease();
+            let key = 0;
+        }
+
+        do showSummary();
+        return;
+    }
+}

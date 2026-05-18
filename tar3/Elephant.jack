@@ -1,0 +1,265 @@
+class Elephant {
+	field int location;
+    field int mode;
+    // mode:
+    // 0 = normal
+    // 1 = mirror horizontal
+    // 2 = rotate right
+    // 3 = mirror vertical
+    // 4 = rotate left
+
+    constructor Elephant new(int startLocation) {
+        let location = startLocation;
+        let mode = 0;
+        return this;
+    }
+
+    method int getMemAddress() {
+        return 16384 + location;
+    }
+
+	method int getRow() {
+		return location / 32;
+	}
+
+	method int getCol() {
+		return location - ((location / 32) * 32);
+	}
+
+    method void draw() {
+        if (mode = 0) {
+            do drawNormal();
+        }
+        if (mode = 1) {
+            do drawMirrorHorizontal();
+        }
+        if (mode = 2) {
+            do drawRotateRight();
+        }
+        if (mode = 3) {
+            do drawMirrorVertical();
+        }
+        if (mode = 4) {
+            do drawRotateLeft();
+        }
+        return;
+    }
+	method void erase() {
+    	var int memAddress;
+        let memAddress = getMemAddress();
+
+        do Memory.poke(memAddress + 0, 0);
+        do Memory.poke(memAddress + 32, 0);
+        do Memory.poke(memAddress + 64, 0);
+        do Memory.poke(memAddress + 96, 0);
+        do Memory.poke(memAddress + 128, 0);
+        do Memory.poke(memAddress + 160, 0);
+        do Memory.poke(memAddress + 192, 0);
+        do Memory.poke(memAddress + 224, 0);
+        do Memory.poke(memAddress + 256, 0);
+        do Memory.poke(memAddress + 288, 0);
+        do Memory.poke(memAddress + 320, 0);
+        do Memory.poke(memAddress + 352, 0);
+        do Memory.poke(memAddress + 384, 0);
+        do Memory.poke(memAddress + 416, 0);
+        do Memory.poke(memAddress + 448, 0);
+        do Memory.poke(memAddress + 480, 0);
+
+        return;
+    }
+
+    method void moveLeft() {
+    if (getCol() > 0) {
+        do erase();
+        let location = location - 1;
+        do draw();
+    }
+    return;
+}
+
+	method void moveRight() {
+		if (getCol() < 31) {
+			do erase();
+			let location = location + 1;
+			do draw();
+		}
+		return;
+	}
+
+	method void moveUp() {
+		if (getRow() > 0) {
+			do erase();
+			let location = location - 32;
+			do draw();
+		}
+		return;
+	}
+    method void moveDown() {
+    if (getRow() < 240) { //the elephant is 16 len high
+        do erase();
+        let location = location + 32;
+        do draw();
+    }
+    return;
+}
+
+    method void setNormal() {
+        do erase();
+        let mode = 0;
+        do draw();
+        return;
+    }
+
+    method void flipHorizontal() {
+        do erase();
+        let mode = 1;
+        do draw();
+        return;
+    }
+
+    method void rotateRight() {
+        do erase();
+        let mode = 2;
+        do draw();
+        return;
+    }
+
+    method void flipVertical() {
+        do erase();
+        let mode = 3;
+        do draw();
+        return;
+    }
+
+    method void rotateLeft() {
+        do erase();
+        let mode = 4;
+        do draw();
+        return;
+    }
+
+    method int getLocation() {
+        return location;
+    }
+
+    method void setLocation(int newLocation) {
+        do erase();
+        let location = newLocation;
+        do draw();
+        return;
+    }
+
+    method int getMode() {
+        return mode;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+	method void drawNormal() {
+        var int memAddress;
+        let memAddress = getMemAddress();
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 15872);
+        do Memory.poke(memAddress+96, 32512);
+        do Memory.poke(memAddress+128, 31200);
+        do Memory.poke(memAddress+160, 24304);
+        do Memory.poke(memAddress+192, 32508);
+        do Memory.poke(memAddress+224, 31486);
+        do Memory.poke(memAddress+256, 28157);
+        do Memory.poke(memAddress+288, 28669);
+        do Memory.poke(memAddress+320, -4404);
+        do Memory.poke(memAddress+352, 3788);
+        do Memory.poke(memAddress+384, 3788);
+        do Memory.poke(memAddress+416, 3788);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+	    method void drawRotateRight() {
+        var int memAddress;
+        let memAddress = getMemAddress();
+        do Memory.poke(memAddress+0, 192);
+        do Memory.poke(memAddress+32, 256);
+        do Memory.poke(memAddress+64, 1020);
+        do Memory.poke(memAddress+96, 1020);
+        do Memory.poke(memAddress+128, 1984);
+        do Memory.poke(memAddress+160, 4032);
+        do Memory.poke(memAddress+192, 4092);
+        do Memory.poke(memAddress+224, 4092);
+        do Memory.poke(memAddress+256, 6336);
+        do Memory.poke(memAddress+288, 14204);
+        do Memory.poke(memAddress+320, 14076);
+        do Memory.poke(memAddress+352, 16380);
+        do Memory.poke(memAddress+384, 16128);
+        do Memory.poke(memAddress+416, 15328);
+        do Memory.poke(memAddress+448, 8160);
+        do Memory.poke(memAddress+480, 32);
+        return;
+    }
+    method void drawRotateLeft() {
+        var int memAddress;
+        let memAddress = getMemAddress();
+        do Memory.poke(memAddress+0, 1024);
+        do Memory.poke(memAddress+32, 2040);
+        do Memory.poke(memAddress+64, 2012);
+        do Memory.poke(memAddress+96, 252);
+        do Memory.poke(memAddress+128, 16380);
+        do Memory.poke(memAddress+160, 16236);
+        do Memory.poke(memAddress+192, 16108);
+        do Memory.poke(memAddress+224, 792);
+        do Memory.poke(memAddress+256, 16368);
+        do Memory.poke(memAddress+288, 16368);
+        do Memory.poke(memAddress+320, 1008);
+        do Memory.poke(memAddress+352, 992);
+        do Memory.poke(memAddress+384, 16320);
+        do Memory.poke(memAddress+416, 16320);
+        do Memory.poke(memAddress+448, 128);
+        do Memory.poke(memAddress+480, 768);
+        return;
+    }
+	    method void drawMirrorVertical() {
+        var int memAddress;
+        let memAddress = getMemAddress();
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 124);
+        do Memory.poke(memAddress+96, 254);
+        do Memory.poke(memAddress+128, 1950);
+        do Memory.poke(memAddress+160, 3962);
+        do Memory.poke(memAddress+192, 16254);
+        do Memory.poke(memAddress+224, 32606);
+        do Memory.poke(memAddress+256, -16458);
+        do Memory.poke(memAddress+288, -16394);
+        do Memory.poke(memAddress+320, 13175);
+        do Memory.poke(memAddress+352, 13168);
+        do Memory.poke(memAddress+384, 13168);
+        do Memory.poke(memAddress+416, 13168);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+	method void drawMirrorHorizontal() {
+		var int memAddress;
+		let memAddress = getMemAddress();
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 13168);
+        do Memory.poke(memAddress+96, 13168);
+        do Memory.poke(memAddress+128, 13168);
+        do Memory.poke(memAddress+160, 13175);
+        do Memory.poke(memAddress+192, -16394);
+        do Memory.poke(memAddress+224, -16458);
+        do Memory.poke(memAddress+256, 32606);
+        do Memory.poke(memAddress+288, 16254);
+        do Memory.poke(memAddress+320, 3962);
+        do Memory.poke(memAddress+352, 1950);
+        do Memory.poke(memAddress+384, 254);
+        do Memory.poke(memAddress+416, 124);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+	}
+}

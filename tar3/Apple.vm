@@ -1,0 +1,917 @@
+function Apple.new 0
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push constant 0
+pop this 1
+push pointer 0
+return
+function Apple.getMemAddress 0
+push argument 0
+pop pointer 0
+push constant 16384
+push this 0
+add
+return
+function Apple.getRow 0
+push argument 0
+pop pointer 0
+push this 0
+push constant 32
+call Math.divide 2
+return
+function Apple.getCol 0
+push argument 0
+pop pointer 0
+push this 0
+push this 0
+push constant 32
+call Math.divide 2
+push constant 32
+call Math.multiply 2
+sub
+return
+function Apple.draw 0
+push argument 0
+pop pointer 0
+push this 1
+push constant 0
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+call Apple.drawNormal 1
+pop temp 0
+label IF_FALSE0
+push this 1
+push constant 1
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push pointer 0
+call Apple.drawMirrorHorizontal 1
+pop temp 0
+label IF_FALSE1
+push this 1
+push constant 2
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push pointer 0
+call Apple.drawRotateRight 1
+pop temp 0
+label IF_FALSE2
+push this 1
+push constant 3
+eq
+if-goto IF_TRUE3
+goto IF_FALSE3
+label IF_TRUE3
+push pointer 0
+call Apple.drawMirrorVertical 1
+pop temp 0
+label IF_FALSE3
+push this 1
+push constant 4
+eq
+if-goto IF_TRUE4
+goto IF_FALSE4
+label IF_TRUE4
+push pointer 0
+call Apple.drawRotateLeft 1
+pop temp 0
+label IF_FALSE4
+push constant 0
+return
+function Apple.erase 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Apple.moveLeft 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getCol 1
+push constant 0
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push this 0
+push constant 1
+sub
+pop this 0
+push pointer 0
+call Apple.draw 1
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Apple.moveRight 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getCol 1
+push constant 31
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push this 0
+push constant 1
+add
+pop this 0
+push pointer 0
+call Apple.draw 1
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Apple.moveUp 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getRow 1
+push constant 0
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push this 0
+push constant 32
+sub
+pop this 0
+push pointer 0
+call Apple.draw 1
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Apple.moveDown 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getRow 1
+push constant 240
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push this 0
+push constant 32
+add
+pop this 0
+push pointer 0
+call Apple.draw 1
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Apple.setNormal 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push constant 0
+pop this 1
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.flipHorizontal 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push constant 1
+pop this 1
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.rotateRight 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push constant 2
+pop this 1
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.flipVertical 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push constant 3
+pop this 1
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.rotateLeft 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push constant 4
+pop this 1
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.getLocation 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Apple.setLocation 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.erase 1
+pop temp 0
+push argument 1
+pop this 0
+push pointer 0
+call Apple.draw 1
+pop temp 0
+push constant 0
+return
+function Apple.getMode 0
+push argument 0
+pop pointer 0
+push this 1
+return
+function Apple.dispose 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Apple.drawNormal 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 4096
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 784
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 32640
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 16128
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 16248
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 31676
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 3810
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 6450
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 6450
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 6450
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 3426
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 30748
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 15992
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 8184
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 4080
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 1632
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Apple.drawRotateRight 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 992
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 2032
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 4092
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 20030
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 19471
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 18895
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 26086
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 15878
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 15855
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 31183
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 31774
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 452
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 8
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 6160
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 15392
+neg
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Apple.drawRotateLeft 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 1987
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 4071
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 8191
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 15487
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 30782
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 3170
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 2116
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 24700
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 26534
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 3182
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 4046
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 31858
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 16368
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 4064
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 1984
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Apple.drawMirrorHorizontal 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 1632
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 4080
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 8184
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 7804
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 14366
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 31055
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 30863
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 15838
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 7932
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 252
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 510
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 3903
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 15
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Apple.drawMirrorVertical 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Apple.getMemAddress 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 15
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 3903
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 510
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 252
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 7932
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 15838
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 30863
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 29543
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 31055
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 14366
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 7804
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 8184
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 4080
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 1632
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
