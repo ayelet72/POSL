@@ -13,15 +13,16 @@ List<File> getJackFiles(Directory dir) {
 }
 
 void processJackFile(File inputFile) {
-  final basePath = inputFile.path.replaceFirst(RegExp(r'\.jack$', caseSensitive: false), '');
+  final basePath = inputFile.path.replaceFirst(
+    RegExp(r'\.jack$', caseSensitive: false),
+    '',
+  );
+
   final tokenFile = File('${basePath}T.xml');
-  //final parseFile = File('$basePath.xml');
 
   tokenFile.writeAsStringSync('');
-  //parseFile.writeAsStringSync('');
 
   tokenizeFile(inputFile, tokenFile);
-  //parseTokenFile(tokenFile, parseFile);
 
   print('Processed: ${inputFile.path}');
 }
