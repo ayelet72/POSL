@@ -2,7 +2,7 @@ import 'translator.dart';
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    print('Usage: dart run main.dart <input .vm file or folder>');
+    print('No .vm files were found in the folder:\n${dir.path}');
     return;
   }
 
