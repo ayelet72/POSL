@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'tokenizer.dart';
+import 'compilation_engine.dart'; // ← נוסף
 
 List<File> getJackFiles(Directory dir) {
   final jackFiles = dir
@@ -19,10 +20,11 @@ void processJackFile(File inputFile) {
   );
 
   final tokenFile = File('${basePath}T.xml');
-
   tokenFile.writeAsStringSync('');
-
   tokenizeFile(inputFile, tokenFile);
+
+  final outputFile = File('$basePath.xml'); // ←
+  parseTokenFile(tokenFile, outputFile); // ←
 
   print('Processed: ${inputFile.path}');
 }
