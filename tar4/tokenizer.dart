@@ -1,12 +1,6 @@
 import 'dart:io';
 
-enum TokenType {
-  keyword,
-  symbol,
-  identifier,
-  integerConstant,
-  stringConstant,
-}
+enum TokenType { keyword, symbol, identifier, integerConstant, stringConstant }
 
 class JackTokenizer {
   static const Set<String> keywords = {
@@ -188,9 +182,7 @@ class JackTokenizer {
     final number = int.parse(value);
 
     if (number < 0 || number > 32767) {
-      throw FormatException(
-        'Integer constant out of range (0..32767): $value',
-      );
+      throw FormatException('Integer constant out of range (0..32767): $value');
     }
 
     _currentToken = value;
@@ -207,8 +199,9 @@ class JackTokenizer {
     final value = _input.substring(start, _index);
 
     _currentToken = value;
-    _currentType =
-        keywords.contains(value) ? TokenType.keyword : TokenType.identifier;
+    _currentType = keywords.contains(value)
+        ? TokenType.keyword
+        : TokenType.identifier;
   }
 
   bool _startsWithAt(int index, String pattern) {
