@@ -54,8 +54,6 @@ List<TokenData> _readTokensFromXml(File tokenFile) {
   return tokens;
 }
 
-// ---------------------------------------------------------------------------
-
 class CompilationEngine {
   final List<TokenData> _tokens;
   final SymbolTable _symbolTable = SymbolTable();
@@ -72,15 +70,11 @@ class CompilationEngine {
 
   String getOutput() => _vm.output();
 
-  // -------------------------------------------------------------------------
   // Label helper
-  // -------------------------------------------------------------------------
 
   String _newLabel(String base) => '${_className}_${base}_${_labelCounter++}';
 
-  // -------------------------------------------------------------------------
   // compileClass
-  // -------------------------------------------------------------------------
 
   void compileClass() {
     _eat('class');
@@ -101,9 +95,7 @@ class CompilationEngine {
     _eat('}');
   }
 
-  // -------------------------------------------------------------------------
   // compileClassVarDec  — only updates symbol table, emits nothing
-  // -------------------------------------------------------------------------
 
   void compileClassVarDec() {
     final kindToken = _currentValue(); // 'static' | 'field'
@@ -126,9 +118,7 @@ class CompilationEngine {
     _eat(';');
   }
 
-  // -------------------------------------------------------------------------
   // compileSubroutine
-  // -------------------------------------------------------------------------
 
   void compileSubroutine() {
     _subroutineKind = _currentValue(); // constructor | function | method
@@ -154,9 +144,7 @@ class CompilationEngine {
     compileSubroutineBody();
   }
 
-  // -------------------------------------------------------------------------
   // compileParameterList
-  // -------------------------------------------------------------------------
 
   void compileParameterList() {
     if (_currentValue() == ')') return;
@@ -175,9 +163,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // compileSubroutineBody
-  // -------------------------------------------------------------------------
 
   void compileSubroutineBody() {
     _eat('{');
@@ -209,9 +195,7 @@ class CompilationEngine {
     _eat('}');
   }
 
-  // -------------------------------------------------------------------------
   // compileVarDec
-  // -------------------------------------------------------------------------
 
   void compileVarDec() {
     _eat('var');
@@ -231,9 +215,7 @@ class CompilationEngine {
     _eat(';');
   }
 
-  // -------------------------------------------------------------------------
   // compileStatements
-  // -------------------------------------------------------------------------
 
   void compileStatements() {
     while (true) {
@@ -254,9 +236,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // compileLet
-  // -------------------------------------------------------------------------
 
   void compileLet() {
     _eat('let');
@@ -292,9 +272,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // compileIf
-  // -------------------------------------------------------------------------
 
   void compileIf() {
     final labelTrue = _newLabel('IF_TRUE');
@@ -327,9 +305,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // compileWhile
-  // -------------------------------------------------------------------------
 
   void compileWhile() {
     final labelStart = _newLabel('WHILE_START');
@@ -353,9 +329,7 @@ class CompilationEngine {
     _vm.writeLabel(labelEnd);
   }
 
-  // -------------------------------------------------------------------------
   // compileDo
-  // -------------------------------------------------------------------------
 
   void compileDo() {
     _eat('do');
@@ -366,9 +340,7 @@ class CompilationEngine {
     _vm.writePop('temp', 0);
   }
 
-  // -------------------------------------------------------------------------
   // compileReturn
-  // -------------------------------------------------------------------------
 
   void compileReturn() {
     _eat('return');
@@ -384,9 +356,7 @@ class CompilationEngine {
     _vm.writeReturn();
   }
 
-  // -------------------------------------------------------------------------
   // compileExpression
-  // -------------------------------------------------------------------------
 
   void compileExpression() {
     compileTerm();
@@ -399,9 +369,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // compileTerm
-  // -------------------------------------------------------------------------
 
   void compileTerm() {
     final current = _currentValue();
@@ -487,9 +455,7 @@ class CompilationEngine {
     );
   }
 
-  // -------------------------------------------------------------------------
   // compileExpressionList — returns number of expressions compiled
-  // -------------------------------------------------------------------------
 
   int compileExpressionList() {
     if (_currentValue() == ')') return 0;
@@ -506,14 +472,12 @@ class CompilationEngine {
     return count;
   }
 
-  // -------------------------------------------------------------------------
   // _compileSubroutineCall
   //
   // Handles four cases:
   //   Func(...)           → method call on 'this'       → push pointer 0, call ClassName.Func n+1
   //   ClassName.Func(...) → static/constructor call     → call ClassName.Func n
   //   obj.Func(...)       → method call on object       → push obj,         call ObjClass.Func n+1
-  // -------------------------------------------------------------------------
 
   void _compileSubroutineCall() {
     final firstName = _currentValue();
@@ -555,9 +519,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // VM helper: push a variable by looking it up in the symbol table
-  // -------------------------------------------------------------------------
 
   void _pushVariable(String name) {
     final kind = _symbolTable.kindOf(name);
@@ -586,9 +548,7 @@ class CompilationEngine {
     }
   }
 
-  // -------------------------------------------------------------------------
   // Emit arithmetic / comparison operators
-  // -------------------------------------------------------------------------
 
   void _emitOp(String op) {
     switch (op) {
@@ -616,9 +576,7 @@ class CompilationEngine {
   bool _isOp(String value) =>
       const {'+', '-', '*', '/', '&', '|', '<', '>', '='}.contains(value);
 
-  // -------------------------------------------------------------------------
   // Token helpers
-  // -------------------------------------------------------------------------
 
   void _eat(String expected) {
     if (_currentValue() != expected) {
