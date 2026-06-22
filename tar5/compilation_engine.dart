@@ -227,7 +227,11 @@ class CompilationEngine {
         case 'while':
           compileWhile();
         case 'do':
-          compileDo();
+          if (_peekValue() == '{') {
+            compileDoWhile();
+          } else {
+            compileDo();
+          }
         case 'return':
           compileReturn();
         default:
@@ -329,11 +333,32 @@ class CompilationEngine {
     _vm.writeLabel(labelEnd);
   }
 
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  // do { statements } while (expression);
+  void compileDoWhile() {
+    final labelStart = _newLabel('DO_WHILE_START');
+    _vm.writeLabel(labelStart);
+
+    _eat('do');
+    _eat('{');
+    compileStatements();
+    _eat('}');
+
+    _eat('while');
+    _eat('(');
+    compileExpression();
+    _eat(')');
+    _eat(';');
+
+    _vm.writeIf(labelStart); // if condition true → jump back to start
+  }
+
   // compileDo
 
   void compileDo() {
     _eat('do');
     _compileSubroutineCall();
+
     _eat(';');
 
     // do statement discards the return value
